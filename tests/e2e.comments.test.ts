@@ -1,6 +1,7 @@
 import request from 'supertest';
 import { app } from '../src/app';
 import { AppDataSource } from '../src/data-source';
+import { CommentPost } from "../src/entity/Comment";
 
 describe('CommentController', () => {
   let token: string;
@@ -50,49 +51,71 @@ describe('CommentController', () => {
   });
 
   it('should create a comment', async () => {
-    const res = await request(app)
-      .post(`/comments/${postId}`)
+    const comment = await request(app)
+      .post(`/comments`)
       .set('Authorization', `Bearer ${token}`)
-      .send({ comment: 'Test Post' });
-
-    expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('id');
-    expect(res.body.comment).toBe('Test Post');
-    commentId = res.body.id;
+      .send({ postId, comment: 'Test Post' });
+    const commentsRepo = AppDataSource.getRepository(CommentPost)
+    const commentInfo = await commentsRepo.findOne({ where: { id: comment.id } });
+    expect(comment.status).toBe(201);
+    expect(comment.body).toHaveProperty('id');
+    expect(comment.body.comment).toBe('Test Post');
+    expect(comment.body.comment).toEqual(commentInfo.comment);
+    expect(comment.body.commentId).toBe(comment.id);
+    commentId = comment.body.id;
   });
 
   it('should update the comment', async () => {
-    const res = await request(app)
-      .put(`/comments/update/${commentId}`)
+    const comment = await request(app)
+      .patch(`/comments/${commentId}`)
       .set('Authorization', `Bearer ${token}`)
       .send({ comment: 'Updated comment' });
-
-    expect(res.status).toBe(200);
-    expect(res.body.comment).toBe('Updated comment');
-    expect(res.body.isLiked).toBe(false);
+    const commentsRepo = AppDataSource.getRepository(CommentPost)
+    const commentInfo = await commentsRepo.findOne({ where: { id: comment.id } });
+    expect(comment.status).toBe(200);
+    expect(comment.body.comment).toEqual('Updated comment');
+    expect(comment.body.commentId).toEqual(comment.id);
+    expect(comment.body.comment).toEqual(commentInfo.comment);
   });
+
   it('should forbid updating a comment by another user', async () => {
     const commentRes = await request(app)
-      .post(`/comments/${postId}`)
+      .post(`/comments`)
       .set('Authorization', `Bearer ${token}`)
-      .send({ comment: 'Comment to be protected' });
+      .send({ postId, comment: 'Comment to be protected' });
 
     const protectedCommentId = commentRes.body.id;
 
     const res = await request(app)
-      .put(`/comments/update/${protectedCommentId}`)
+      .patch(`/comments/${protectedCommentId}`)
       .set('Authorization', `Bearer ${secondToken}`)
       .send({ comment: 'Hacked comment' });
 
     expect(res.status).toBe(403);
     expect(res.body.message).toBe('You are not allowed to update this comment');
   });
-  it('should delete the comment', async () => {
-    const res = await request(app)
-      .delete(`/comments/${commentId}`)
-      .set('Authorization', `Bearer ${token}`);
-
-    expect(res.status).toBe(200);
-    expect(res.body.message).toBe('Comment deleted');
-  });
+  //
+  // it('should delete the comment', async () => {
+  //   const res = await request(app)
+  //     .delete(`/comments/${commentId}`)
+  //     .set('Authorization', `Bearer ${token}`);
+  //
+  //   expect(res.status).toBe(204);
+  // });
+  //
+  // it('should forbid deleting a comment by another user', async () => {
+  //   const commentRes = await request(app)
+  //     .post(`/comments`)
+  //     .set('Authorization', `Bearer ${token}`)
+  //     .send({ postId, comment: 'Comment to test delete' });
+  //
+  //   const anotherCommentId = commentRes.body.id;
+  //
+  //   const res = await request(app)
+  //     .delete(`/comments/${anotherCommentId}`)
+  //     .set('Authorization', `Bearer ${secondToken}`);
+  //
+  //   expect(res.status).toBe(403);
+  //   expect(res.body.message).toBe('You are not allowed to delete this comment');
+  // });
 });

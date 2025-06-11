@@ -1,6 +1,7 @@
 import request from 'supertest';
 import { app } from '../src/app';
 import { AppDataSource } from '../src/data-source';
+import { UserPosts } from "../src/entity/Post";
 
 describe('Post', () => {
   let token = '';
@@ -44,69 +45,58 @@ describe('Post', () => {
     await AppDataSource.destroy();
   });
 
+  it('should fetch all posts with pagination', async () => {
+    const postRepo = AppDataSource.getRepository(UserPosts);
+    const spy = jest.spyOn(postRepo, 'find');
+    const limit = 10;
+    let page = 1;
+
+    while (true) {
+      const posts = await request(app)
+        .get('/posts')
+        .query({ limit, page })
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(posts.status).toBe(200);
+      if (posts.body.length < limit) break;
+      page++;
+    }
+    expect(spy).toHaveBeenCalledTimes(page);
+  });
   it('should create a post', async () => {
     const newPost = {
       post: 'This is the test post',
       imageUrl: 'https://images.example.com/test.jpg',
     };
 
-    const res = await request(app)
-      .post('/post')
+    const post = await request(app)
+      .post('/posts')
       .set('Authorization', `Bearer ${token}`)
       .send(newPost);
-
-    expect(res.status).toBe(201);
-    expect(res.body).toHaveProperty('id');
-    expect(res.body.post).toBe('This is the test post');
-    createdPostID = res.body.id;
+    const postRepo = await AppDataSource.getRepository(UserPosts);
+    const postInfo = await postRepo.findOne({ where: { id: post.body.id } });
+    expect(post.status).toBe(201);
+    expect(post.body).toHaveProperty('id');
+    expect(post.body.post).toEqual('This is the test post');
+    expect(post.body.imageUrl).toEqual(postInfo.imageUrl);
+    expect(post.body.post).toEqual(postInfo.post);
+    createdPostID = post.body.id;
   });
-  it('should fetch all posts with pagination', async () => {
-    const limit = 10;
-    let page = 1;
-    let allPosts: any[] = [];
-
-    while (true) {
-      const res = await request(app)
-        .get('/post/all')
-        .query({ limit, page })
-        .set('Authorization', `Bearer ${token}`);
-
-      expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
-
-      allPosts.push(...res.body);
-
-      if (res.body.length < limit) break; // No more pages
-      page++;
-    }
-
-    const expectedPageCount = Math.ceil(allPosts.length / limit);
-    expect(page).toBe(expectedPageCount);
-
-  });
-
-
   it('should update the  post', async () => {
-    const updatedPost = {
-      post: 'Updated test post',
-      imageUrl: 'https://images.example.com/updated.jpg',
-    };
-
-    const res = await request(app)
-      .put(`/post/${createdPostID}`)
+    const post = await request(app)
+      .patch(`/posts/${createdPostID}`)
       .set('Authorization', `Bearer ${token}`)
-      .send(updatedPost);
-
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual({ message: 'Post updated successfully' });
+      .send({
+        post: 'Updated test post',
+      });
+    expect(post.status).toBe(200);
+    expect(post.body).toEqual({ message: 'Post updated successfully' });
   });
 
   it('should delete the  post', async () => {
-    const res = await request(app)
-      .delete(`/post/${createdPostID}`)
+    const post = await request(app)
+      .delete(`/posts/${createdPostID}`)
       .set('Authorization', `Bearer ${token}`);
-
-    expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('message', 'Post deleted');
+    expect(post.status).toBe(204);
   });
 });

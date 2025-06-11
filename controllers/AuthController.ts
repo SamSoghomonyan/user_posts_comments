@@ -3,7 +3,8 @@ import {
   Post,
   Body,
   HttpError,
-  BadRequestError
+  BadRequestError,
+  HttpCode
 } from 'routing-controllers';
 import { AppDataSource } from "../src/data-source";
 import { User } from "../src/entity/User";
@@ -15,6 +16,7 @@ export class AuthController {
   private userRepo = AppDataSource.getRepository(User);
 
   @Post('/signup')
+  @HttpCode(201)
   async signup(
     @Body() body: { email: string; username: string; password: string }
   ) {
@@ -41,20 +43,17 @@ export class AuthController {
   }
 
   @Post('/login')
-  async login(@Body() body: { email: string; password: string ,name: string }) {
-    const { email, password,name } = body;
+  async login(@Body() body: { email: string; password: string}) {
+    const { email, password } = body;
 
     const user = await this.userRepo.findOne({ where: { email } });
     if (!user) {
-      throw new HttpError(401, 'Invalid email');
+      throw new HttpError(401, 'Invalid credentials');
     }
-
-
     const isValid = await bcrypt.compare(password, user.password);
-    if (!isValid) {
-      throw new HttpError(401, 'Invalid password');
+    if(!isValid){
+      throw new HttpError(401, 'Invalid credentials');
     }
-
     const token = jwt.sign(
       { id: user.id, email: user.email },
       process.env.JWT_SECRET || 'my_secret_key',

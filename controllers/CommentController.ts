@@ -2,46 +2,43 @@ import {
   JsonController,
   Body,
   Param,
-  Get,
   Delete,
-  Put,
   Post,
-  UseBefore,
   Req,
-  UnauthorizedError,
+  Patch,
   ForbiddenError,
-  NotFoundError,
+  CurrentUser,
+  HttpCode
 } from "routing-controllers";
-import { CurrentUser } from "../middleware/CurrentUser";
 import { AppDataSource } from "../src/data-source";
 import { User } from "../src/entity/User";
 import { UserPosts } from "../src/entity/Post";
 import { CommentPost } from "../src/entity/Comment";
 
 @JsonController('/comments')
-@UseBefore(CurrentUser)
 export class CommentController {
   private userRepo = AppDataSource.getRepository(User);
   private postRepo = AppDataSource.getRepository(UserPosts);
   private commentRepo = AppDataSource.getRepository(CommentPost)
 
-  @Post('/:post_id')
+  @Post('/')
+  @HttpCode(201)
   async createComment(
-    @Req() req: any,
-    @Body() body: any,
-    @Param('post_id') post_id: string,
+    @CurrentUser() user: User,
+    @Body() body: { postId: string; comment: string },
   ) {
-    const user = await this.userRepo.findOne({ where: { id: req.user.id } });
-    const post = await this.postRepo.findOne({ where: { id: post_id } });
+    const userComment = await this.userRepo.findOne({ where: { id: user.id } });
+    const post = await this.postRepo.findOne({ where: { id: body.postId } });
     const comment = new CommentPost();
     comment.comment = body.comment;
     comment.isLiked = false;
     comment.post = post;
-    comment.user = user;
+    comment.user = userComment;
     return await this.commentRepo.save(comment);
   }
 
   @Delete('/:comment_id')
+  @HttpCode(204)
   async deleteComment(@Req() req: any, @Param('comment_id') comment_id: string) {
     const comment = await this.commentRepo.findOne({
       where: { id: comment_id },
@@ -54,9 +51,9 @@ export class CommentController {
     return { message: 'Comment deleted' };
   }
 
-  @Put('/update/:comment_id')
+  @Patch('/:comment_id')
   async updateComment(
-    @Req() req: any,
+    @CurrentUser() user: User,
     @Param('comment_id') comment_id: string,
     @Body() body: { comment?: string; isLiked?: boolean },
   ) {
@@ -65,7 +62,7 @@ export class CommentController {
       relations: ['user'],
     });
 
-    if (comment.user.id !== req.user.id) throw new ForbiddenError('You are not allowed to update this comment');
+    if (comment.user.id !== user.id) throw new ForbiddenError('You are not allowed to update this comment');
 
     if (body.comment !== undefined) {
       comment.comment = body.comment;
