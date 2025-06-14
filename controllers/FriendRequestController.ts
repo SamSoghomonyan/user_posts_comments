@@ -5,12 +5,12 @@ import {
   Delete,
   Body,
   Param,
-  Req,
   Get,
   BadRequestError,
-  NotFoundError,
   UnauthorizedError,
-  CurrentUser
+  CurrentUser,
+  HttpError,
+  HttpCode
 } from "routing-controllers";
 import { AppDataSource } from "../src/data-source";
 import { User } from "../src/entity/User";
@@ -22,6 +22,7 @@ export class FriendRequestController {
   private friendRequestRepo = AppDataSource.getRepository(FriendRequest);
 
   @Post('/')
+  @HttpCode(201)
   async sendFriendRequest(
     @Body() body: { receiverId: string },
     @CurrentUser() user: User
@@ -33,10 +34,6 @@ export class FriendRequestController {
     }
 
     const receiver = await this.userRepo.findOneBy({ id: body.receiverId });
-    if (!receiver) {
-      throw new NotFoundError("User not found");
-    }
-
     const existing = await this.friendRequestRepo.findOne({
       where: [
         { sender: { id: sender.id }, receiver: { id: receiver.id } },
@@ -74,17 +71,13 @@ export class FriendRequestController {
   @Patch('/:id')
   async respondToRequest(
     @Param('id') id: string,
-    @Body() body: { status: 'accepted' | 'declined' },
+    @Body() body: { status: 'accepted'},
     @CurrentUser() user: User
   ) {
     const friendRequest = await this.friendRequestRepo.findOne({
       where: { id },
       relations: ['receiver', 'sender']
     });
-
-    if (!friendRequest) {
-      throw new NotFoundError("Friend request not found");
-    }
 
     if (user.id !== friendRequest.receiver.id) {
       throw new UnauthorizedError("You are not authorized to respond to this friend request.");
@@ -93,11 +86,6 @@ export class FriendRequestController {
     if (body.status === 'accepted') {
       await this.friendRequestRepo.update(id, { status: 'accepted' });
       return { message: 'Friend request accepted' };
-    } else if (body.status === 'declined') {
-      await this.friendRequestRepo.delete(id);
-      return { message: 'Friend request declined' };
-    } else {
-      throw new BadRequestError("Invalid status. Use 'accepted' or 'declined'.");
     }
   }
 
@@ -134,12 +122,8 @@ export class FriendRequestController {
       relations: ['sender', 'receiver']
     });
 
-    if (!FriendRequest) {
-      throw new NotFoundError("Friend request not found");
-    }
-
     if (FriendRequest.sender.id !== user.id && FriendRequest.receiver.id !== user.id) {
-      throw new UnauthorizedError("You are not allowed to delete this request");
+      throw new HttpError(403,"You are not allowed to delete this request");
     }
 
     await this.friendRequestRepo.delete(id);

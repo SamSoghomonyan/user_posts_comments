@@ -5,32 +5,41 @@ import { UserPosts } from "../src/entity/Post";
 
 describe('Post', () => {
   let token = '';
+  let token2 = '';
   let createdPostID = '';
 
-  const generateRandomString = () => Math.random().toString(36).substring(2, 10);
-
+  const random1 = () => Math.random().toString(36).substring(2, 10);
+  const random2 = () => Math.random().toString(36).substring(2, 10);
   const userinfo = {
-    username: `user_${generateRandomString()}`,
-    email: `${generateRandomString()}@example.com`,
+    username: `user_${random1()}`,
+    email: `${random1()}@example.com`,
     password: '123456',
   };
 
+  const user2info = {
+    username: `user_${random2()}`,
+    email: `${random2()}@example.com`,
+    password: '123456',
+  }
   beforeAll(async () => {
     await AppDataSource.initialize();
 
     await request(app).post('/auth/signup').send(userinfo);
-
+    await request(app).post('/auth/signup').send(user2info);
     const loginRes = await request(app).post('/auth/login').send({
       email: userinfo.email,
       password: userinfo.password,
     });
-
+    const login2Res = await request(app).post('/auth/login').send({
+      email: user2info.email,
+      password: user2info.password,
+    });
     token = loginRes.body.token;
-
+    token2 = login2Res.body.token;
     for (let i = 0; i < 20; i++) {
       const postPayload = {
-        post: `Post ${i + 1} - ${generateRandomString()}`,
-        imageUrl: `https://images.example.com/${generateRandomString()}.jpg`,
+        post: `Post ${i + 1} - ${random1()}`,
+        imageUrl: `https://images.example.com/${random1()}.jpg`,
       };
 
       const res = await request(app)
@@ -90,13 +99,66 @@ describe('Post', () => {
         post: 'Updated test post',
       });
     expect(post.status).toBe(200);
-    expect(post.body).toEqual({ message: 'Post updated successfully' });
+    expect(post.body.message).toEqual('Post updated successfully' );
   });
-
+  it('post not found', async () => {
+    const post = await request(app)
+      .patch(`/posts/${createdPostID}`)
+      .set('Authorization', `Bearer ${token2}`)
+      .send({
+        post: 'Updated test post',
+      });
+    expect(post.status).toBe(403);
+    expect(post.body.message).toEqual('You are not allowed to edit this post' );
+  });
+  it('you dont allowed to delete this post ', async () => {
+    const post = await request(app)
+      .delete(`/posts/${createdPostID}`)
+      .set('Authorization', `Bearer ${token2}`);
+    expect(post.status).toBe(403);
+    expect(post.body.message).toEqual('You are not allowed to delete this post' );
+  });
   it('should delete the  post', async () => {
     const post = await request(app)
       .delete(`/posts/${createdPostID}`)
       .set('Authorization', `Bearer ${token}`);
     expect(post.status).toBe(204);
+  });
+  it('post not found', async () => {
+    const post = await request(app)
+      .patch(`/posts/${createdPostID}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        post: 'Updated test post',
+    })
+    expect(post.status).toBe(400);
+    expect(post.body.message).toEqual('Post not found' );
+  });
+  it('post not found', async () => {
+    const post = await request(app)
+      .delete(`/posts/${createdPostID}`)
+      .set('Authorization', `Bearer ${token}`)
+    expect(post.status).toBe(400);
+    expect(post.body.message).toEqual('Post not found' );
+  });
+  it('incorect token when deleted the post', async () => {
+    const post = await request(app)
+      .delete(`/posts/${createdPostID}`)
+      .set('Authorization', `Bearer '343725465326svdgfshgd'`)
+    expect(post.status).toBe(401);
+  });  it('incorect token when update the post', async () => {
+    const post = await request(app)
+      .patch(`/posts/${createdPostID}`)
+      .set('Authorization', `Bearer '343725465326svdgfshgd'`)
+    expect(post.status).toBe(401);
+  });
+  it('incorect token when creted the post', async () => {
+    const post = await request(app)
+      .post('/posts')
+      .set('Authorization', `Bearer '73662376478326874`)
+      .send({
+        post: 'Updated test post',
+      });
+    expect(post.status).toBe(401);
   });
 });

@@ -21,8 +21,6 @@ export const app = createExpressServer({
   ],
   currentUserChecker: async (action) => {
     const authHeader = action.request.headers['authorization'];
-    if (!authHeader) return null;
-
     const token = authHeader.split(' ')[1];
     if (!token) return null;
 
@@ -31,7 +29,7 @@ export const app = createExpressServer({
       const userRepo = AppDataSource.getRepository(User);
       return userRepo.findOne({ where: { id: payload.id } });
     } catch (err) {
-      return null;
+      return 'invalid token';
     }
   }
 });

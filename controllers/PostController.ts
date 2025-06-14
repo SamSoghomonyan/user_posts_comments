@@ -4,7 +4,6 @@ import {
   Param,
   Get,
   Delete,
-  Put,
   Post,
   UploadedFile,
   QueryParam,
@@ -19,7 +18,6 @@ import { AppDataSource } from "../src/data-source";
 import { User } from "../src/entity/User";
 import { UserPosts } from "../src/entity/Post";
 import { fileUploadOptions } from "../utils/fileUploadOptions";
-import { PostLike } from "../src/entity/PostLike";
 
 @JsonController('/posts')
 export class PostController {
@@ -77,7 +75,7 @@ export class PostController {
     }
 
     if (post.user.id !== user.id) {
-      throw new UnauthorizedError('You are not allowed to delete this post');
+      throw new HttpError(403,'You are not allowed to delete this post');
     }
 
     await this.postRepo.delete(id);
@@ -102,7 +100,7 @@ export class PostController {
     }
 
     if (post.user.id !== user.id) {
-      throw new UnauthorizedError('You are not allowed to edit this post');
+      throw new HttpError(403, 'You are not allowed to edit this post');
     }
 
     if (body.post) {

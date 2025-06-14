@@ -56,7 +56,7 @@ describe('CommentController', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ postId, comment: 'Test Post' });
     const commentsRepo = AppDataSource.getRepository(CommentPost)
-    const commentInfo = await commentsRepo.findOne({ where: { id: comment.id } });
+    const commentInfo = await commentsRepo.findOne({ where: { id: comment.body.id } });
     expect(comment.status).toBe(201);
     expect(comment.body).toHaveProperty('id');
     expect(comment.body.comment).toBe('Test Post');
@@ -71,7 +71,7 @@ describe('CommentController', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ comment: 'Updated comment' });
     const commentsRepo = AppDataSource.getRepository(CommentPost)
-    const commentInfo = await commentsRepo.findOne({ where: { id: comment.id } });
+    const commentInfo = await commentsRepo.findOne({ where: { id: comment.body.id } });
     expect(comment.status).toBe(200);
     expect(comment.body.comment).toEqual('Updated comment');
     expect(comment.body.commentId).toEqual(comment.id);
@@ -94,28 +94,36 @@ describe('CommentController', () => {
     expect(res.status).toBe(403);
     expect(res.body.message).toBe('You are not allowed to update this comment');
   });
-  //
-  // it('should delete the comment', async () => {
-  //   const res = await request(app)
-  //     .delete(`/comments/${commentId}`)
-  //     .set('Authorization', `Bearer ${token}`);
-  //
-  //   expect(res.status).toBe(204);
-  // });
-  //
-  // it('should forbid deleting a comment by another user', async () => {
-  //   const commentRes = await request(app)
-  //     .post(`/comments`)
-  //     .set('Authorization', `Bearer ${token}`)
-  //     .send({ postId, comment: 'Comment to test delete' });
-  //
-  //   const anotherCommentId = commentRes.body.id;
-  //
-  //   const res = await request(app)
-  //     .delete(`/comments/${anotherCommentId}`)
-  //     .set('Authorization', `Bearer ${secondToken}`);
-  //
-  //   expect(res.status).toBe(403);
-  //   expect(res.body.message).toBe('You are not allowed to delete this comment');
-  // });
+
+  it('should delete the comment', async () => {
+    const res = await request(app)
+      .delete(`/comments/${commentId}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(204);
+  });
+  it('Comment not found', async () => {
+    const res = await request(app)
+      .delete(`/comments/${commentId}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(404);
+    expect(res.body.message).toBe('Comment not found' );
+  });
+
+  it('should forbid deleting a comment by another user', async () => {
+    const commentRes = await request(app)
+      .post(`/comments`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ postId, comment: 'Comment to test delete' });
+
+    const anotherCommentId = commentRes.body.id;
+
+    const res = await request(app)
+      .delete(`/comments/${anotherCommentId}`)
+      .set('Authorization', `Bearer ${secondToken}`);
+
+    expect(res.status).toBe(403);
+    expect(res.body.message).toBe('You are not allowed to delete this comment');
+  });
 });

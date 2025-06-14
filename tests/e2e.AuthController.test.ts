@@ -30,8 +30,7 @@ describe('Auth Controller', () => {
   });
 
   describe('Sign up' , () =>{
-    describe('Successful Registration', () => {
-      it('should return 201 OK and user data', async () => {
+      it('Successful Registration', async () => {
         const user = await request(app).post('/auth/signup').send(newUser);
 
         expect(user.status).toBe(201);
@@ -46,10 +45,8 @@ describe('Auth Controller', () => {
           })
         );
       });
-    });
 
-    describe('Registration with Existing Email', () => {
-      it('should return 400 for existing email', async () => {
+      it('Registration with Existing Email', async () => {
         const existingUser = {
           username: 'user_nuespgy3',
           email: email,
@@ -58,14 +55,12 @@ describe('Auth Controller', () => {
         const user = await request(app).post('/auth/signup').send(existingUser);
 
         expect(user.status).toBe(400);
-        expect(user.body.message).toEqual( 'Email already exists');
+        expect(user.body.message).toEqual( 'Registration failed. Please try again later.');
       });
     });
-  })
   describe('Auth Login', () => {
-    describe('Successful login', () => {
       const userRepo = AppDataSource.getRepository(User);
-      it('should return 200 OK and a valid token', async () => {
+      it('Successful login', async () => {
         const user = await request(app).post('/auth/login').send({
           email: email,
           password: password
@@ -77,9 +72,7 @@ describe('Auth Controller', () => {
         expect(decoded.email).toEqual(email);
         expect(decoded.id).toEqual(userInfo.id);
       });
-    });
-    describe('Invalid credentials' , () => {
-      it('should return 401 for invalid password', async () =>{
+      it('Invalid credentials', async () =>{
         const user = await request(app).post('/auth/login').send({
           email: email,
           password: '123456256513',
@@ -95,7 +88,6 @@ describe('Auth Controller', () => {
         expect(user.status).toBe(401);
         expect(user.body.message).toEqual('Invalid credentials');
       })
-    })
   });
 });
 

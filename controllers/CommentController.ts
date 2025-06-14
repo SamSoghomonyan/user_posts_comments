@@ -4,11 +4,10 @@ import {
   Param,
   Delete,
   Post,
-  Req,
   Patch,
   ForbiddenError,
   CurrentUser,
-  HttpCode
+  HttpCode, HttpError
 } from "routing-controllers";
 import { AppDataSource } from "../src/data-source";
 import { User } from "../src/entity/User";
@@ -39,13 +38,19 @@ export class CommentController {
 
   @Delete('/:comment_id')
   @HttpCode(204)
-  async deleteComment(@Req() req: any, @Param('comment_id') comment_id: string) {
+  async deleteComment(
+    @CurrentUser() user: User,
+    @Param('comment_id') comment_id: string
+  ) {
     const comment = await this.commentRepo.findOne({
       where: { id: comment_id },
       relations: ['user'],
     });
 
-    if (comment.user.id !== req.user.id) throw new ForbiddenError('You are not allowed to delete this comment');
+    if (!comment) throw new HttpError(404,'Comment not found');
+
+    if (comment.user.id !== user.id)
+      throw new ForbiddenError('You are not allowed to delete this comment');
 
     await this.commentRepo.remove(comment);
     return { message: 'Comment deleted' };
@@ -67,10 +72,6 @@ export class CommentController {
     if (body.comment !== undefined) {
       comment.comment = body.comment;
     }
-    if (body.isLiked !== undefined) {
-      comment.isLiked = body.isLiked;
-    }
-
     return await this.commentRepo.save(comment);
   }
 }

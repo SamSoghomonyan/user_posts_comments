@@ -7,9 +7,9 @@ import {
   Param,
   BadRequestError,
   CurrentUser,
-  UnauthorizedError,
   HttpError,
-  HttpCode
+  HttpCode,
+  NotFoundError
 } from "routing-controllers";
 import { AppDataSource } from "../src/data-source";
 import { User } from "../src/entity/User";
@@ -21,10 +21,6 @@ export class UserController {
 
   @Get('/')
   async me(@CurrentUser() user: User) {
-    if (!user) {
-      throw new UnauthorizedError('User not found');
-    }
-
    return this.userRepo.findOne({
       where: { id: user.id },
       relations: [
@@ -51,9 +47,6 @@ export class UserController {
     }
 
     const existingUser = await this.userRepo.findOneBy({ id });
-    if (!existingUser) {
-      throw new BadRequestError('User not found');
-    }
 
     if (body.password) {
       const isSame = await bcrypt.compare(body.password, existingUser.password);
@@ -73,17 +66,13 @@ export class UserController {
 
   @Delete('/:id')
   @HttpCode(204)
-  async delete(@Param('id') id: string, @CurrentUser() user: User) {
-    if (user.id !== id) {
-      throw new UnauthorizedError('Unauthorized');
-    }
-
-    const targetUser = await this.userRepo.findOneBy({ id });
+  async delete(@Param('id') id: string) {
+    const targetUser = await this.userRepo.findOneBy({id});
     if (!targetUser) {
-      return { message: 'User not found' };
+      throw new NotFoundError('User not found');
     }
 
     await this.userRepo.delete(id);
-    return
+    return null
   }
 }

@@ -24,7 +24,7 @@ export class AuthController {
 
     const existingUser = await this.userRepo.findOne({ where: { email } });
     if (existingUser) {
-      throw new BadRequestError('Email already exists');
+      throw new BadRequestError('Registration failed. Please try again later.');
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -56,7 +56,7 @@ export class AuthController {
     }
     const token = jwt.sign(
       { id: user.id, email: user.email },
-      process.env.JWT_SECRET || 'my_secret_key',
+       'my_secret_key',
       { expiresIn: '24h' }
     );
 

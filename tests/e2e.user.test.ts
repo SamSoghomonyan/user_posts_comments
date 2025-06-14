@@ -43,8 +43,7 @@ describe('Users API with auth', () => {
   afterAll(async () => {
     await AppDataSource.destroy();
   });
-  describe('should give the user info',() =>{
-    it('should fetch user info  with auth token', async () => {
+    it('should give the user info', async () => {
       const user = await request(app)
         .get('/users')
         .set('Authorization', `Bearer ${token}`);
@@ -55,16 +54,16 @@ describe('Users API with auth', () => {
       expect(user.body.email).toEqual(userInfo.email);
       expect(user.body.username).toEqual(userInfo.username);
     });
-  })
   describe("should update user info", () =>{
     const random = Math.random().toString(36).substring(2, 10);
-    it('should give 200  ', async () => {
+    it('should update user info', async () => {
       const user = await request(app)
         .patch(`/users/${userId}`)
         .set('Authorization', `Bearer ${token}`)
         .send({
           username: `user_${random}`,
           email: `${random}@example.com`,
+          password: random,
         })
       const userRepo = AppDataSource.getRepository(User);
       const userInfo = await userRepo.findOne({ where: { id: userId } });
@@ -74,9 +73,19 @@ describe('Users API with auth', () => {
       expect(user.body.user.email).toEqual(userInfo.email);
       expect(user.body.user.username).toEqual(userInfo.username);
     })
+    it('should give 400 if new password is same as current password', async () => {
+      const res = await request(app)
+        .patch(`/users/${userId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          password: random,
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toEqual('New password must be different from the current password.');
+    });
   })
-  describe("should cant update user info with auth token", () =>{
-    it('should give 403' , async () => {
+    it('should cant update user info with auth token' , async () => {
       const user = await request(app)
         .patch(`/users/${userId}`)
         .set('Authorization', `Bearer ${token2}`)
@@ -87,13 +96,17 @@ describe('Users API with auth', () => {
       expect(user.status).toBe(403);
       expect(user.body.message).toEqual('Unauthorized');
     })
-  })
-  describe("should deleted user", () =>{
-    it('should delete user info', async() =>{
+    it("should delete user info" , async () => {
       const user = await request(app)
         .delete(`/users/${userId}`)
         .set('Authorization', `Bearer ${token}`)
       expect(user.status).toBe(204);
     })
-  })
+    it("user not found" , async () => {
+      const user = await request(app)
+        .delete(`/users/${userId}`)
+        .set('Authorization', `Bearer ${token}`)
+      expect(user.status).toBe(404);
+      expect(user.body.message).toEqual('User not found');
+    })
 });
