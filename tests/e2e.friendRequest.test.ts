@@ -12,6 +12,7 @@ describe('FriendRequestController', () => {
   let thirdToken: string;
   let user3Id: string;
   let friendRequestIdThird: string;
+  let secondFriendRequest: string;
 
   const random1 = Math.random().toString(36).substring(2, 10);
   const user1 = {
@@ -60,8 +61,12 @@ describe('FriendRequestController', () => {
     const savedUser1 = await AppDataSource.getRepository(User).findOneBy({
       email: user1.email,
     });
+    const savedUser3 = await AppDataSource.getRepository(User).findOneBy({
+      email: user3.email,
+    });
     user1Id = savedUser1.id;
     user2Id = savedUser2.id;
+    user3Id = savedUser3.id
   });
 
   afterAll(async () => {
@@ -69,6 +74,10 @@ describe('FriendRequestController', () => {
   });
 
   it('should send a friend request successfully', async () => {
+    const friendSecond = await request(app)
+      .post('/friend-requests')
+      .set('Authorization', `Bearer ${secondToken}`)
+      .send({ receiverId: user3Id });
     const friend = await request(app)
       .post('/friend-requests')
       .set('Authorization', `Bearer ${token}`)
@@ -82,6 +91,16 @@ describe('FriendRequestController', () => {
     expect(friend.body.receiver.username).toEqual(user2.username);
     expect(friend.body.id).toEqual(friendInfo.id)
     friendRequestId = friend.body.id;
+    secondFriendRequest = friendSecond.body.id
+  });
+  it('You cannot send a request to yourself', async () => {
+    const res = await request(app)
+      .post('/friend-requests')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ receiverId: user1Id });
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toEqual('You cannot send a request to yourself');
   });
   it('You cannot send a request to yourself', async () => {
     const res = await request(app)
@@ -116,9 +135,14 @@ describe('FriendRequestController', () => {
       .patch(`/friend-requests/${friendRequestId}`)
       .set('Authorization', `Bearer ${secondToken}`)
       .send({ status: 'accepted' });
-
+    const acceptedRequest = await request(app)
+      .patch(`/friend-requests/${secondFriendRequest}`)
+      .set('Authorization', `Bearer ${thirdToken}`)
+      .send({ status: 'accepted' });
     expect(res.status).toBe(200);
     expect(res.body.message).toEqual('Friend request accepted');
+    expect(acceptedRequest.status).toBe(200);
+    expect(acceptedRequest.body.message).toEqual('Friend request accepted');
   });
   it('should get friend list of user', async () => {
     const res = await request(app)
@@ -127,38 +151,21 @@ describe('FriendRequestController', () => {
 
     expect(res.status).toBe(200);
     expect(res.body[0].id).toEqual(user1Id)
+    expect(res.body[1].id).toEqual(user3Id)
+  });
+
+  it('You are not allowed to delete this request', async () => {
+    const sendRes = await request(app)
+      .delete(`/friend-requests/${friendRequestId}`)
+      .set('Authorization', `Bearer ${thirdToken}`)
+    expect(sendRes.status).toBe(403);
+    expect(sendRes.body.message).toEqual('You are not allowed to delete this request');
   });
 
   it('should decline a friend request successfully', async () => {
     const sendRes = await request(app)
-      .post('/friend-requests')
-      .set('Authorization', `Bearer ${thirdToken}`)
-      .send({ receiverId: user2Id });
-
-    expect(sendRes.status).toBe(201);
-    friendRequestIdThird = sendRes.body.id;
-
-    const res = await request(app)
-      .delete(`/friend-requests/${friendRequestIdThird}`)
-      .set('Authorization', `Bearer ${secondToken}`)
-
-    expect(res.status).toBe(200);
-    expect(res.body.message).toEqual('Friend request deleted');
-  });
-  it('You are not allowed to delete this request', async () => {
-    const sendRes = await request(app)
-      .post('/friend-requests')
-      .set('Authorization', `Bearer ${thirdToken}`)
-      .send({ receiverId: user2Id });
-
-    expect(sendRes.status).toBe(201);
-    friendRequestIdThird = sendRes.body.id;
-
-    const res = await request(app)
-      .delete(`/friend-requests/${friendRequestIdThird}`)
+      .delete(`/friend-requests/${friendRequestId}`)
       .set('Authorization', `Bearer ${token}`)
-
-    expect(res.status).toBe(403);
-    expect(res.body.message).toEqual('You are not allowed to delete this request');
+    expect(sendRes.status).toBe(200);
   });
 });
