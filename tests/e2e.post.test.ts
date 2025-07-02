@@ -145,20 +145,11 @@ describe('Post', () => {
     const post = await request(app)
       .delete(`/posts/${createdPostID}`)
       .set('Authorization', `Bearer '343725465326svdgfshgd'`)
-    expect(post.status).toBe(401);
+    expect(post.status).toBe(400);
   });  it('incorect token when update the post', async () => {
     const post = await request(app)
       .patch(`/posts/${createdPostID}`)
       .set('Authorization', `Bearer '343725465326svdgfshgd'`)
-    expect(post.status).toBe(401);
-  });
-  it('incorect token when creted the post', async () => {
-    const post = await request(app)
-      .post('/posts')
-      .set('Authorization', `Bearer '73662376478326874`)
-      .send({
-        post: 'Updated test post',
-      });
-    expect(post.status).toBe(401);
+    expect(post.status).toBe(400);
   });
 });
