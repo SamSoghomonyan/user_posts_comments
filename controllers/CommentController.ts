@@ -9,10 +9,10 @@ import {
   CurrentUser,
   HttpCode, HttpError
 } from "routing-controllers";
-import { AppDataSource } from "../src/data-source.js";
-import { User } from "../src/entity/User.js";
-import { UserPosts } from "../src/entity/Post.js";
-import { CommentPost } from "../src/entity/Comment.js";
+import { AppDataSource } from "../src/data-source";
+import { User } from "../src/entity/User";
+import { UserPosts } from "../src/entity/Post";
+import { CommentPost } from "../src/entity/Comment";
 
 @JsonController('/comments')
 export class CommentController {

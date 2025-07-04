@@ -1,13 +1,13 @@
 import path from 'path';
 import express from 'express';
 import { createExpressServer } from 'routing-controllers';
-import { AuthController } from "../controllers/AuthController.js";
-import { UserController } from "../controllers/UserController.js";
-import { PostController } from "../controllers/PostController.js";
-import { CommentController } from "../controllers/CommentController.js";
-// import { FriendRequestController } from "../controllers/FriendRequestController.js";
-import { AppDataSource } from "./data-source.js";
-import { User } from "./entity/User.js";
+import { AuthController } from "../controllers/AuthController";
+import { UserController } from "../controllers/UserController";
+import { PostController } from "../controllers/PostController";
+import { CommentController } from "../controllers/CommentController";
+import { FriendRequestController } from "../controllers/FriendRequestController";
+import { AppDataSource } from "./data-source";
+import { User } from "./entity/User";
 import * as jwt from 'jsonwebtoken';
 
 export const app = createExpressServer({
@@ -17,7 +17,7 @@ export const app = createExpressServer({
     UserController,
     PostController,
     CommentController,
-    // FriendRequestController,
+    FriendRequestController,
   ],
   currentUserChecker: async (action) => {
     const authHeader = action.request.headers['authorization'];
@@ -34,4 +34,4 @@ export const app = createExpressServer({
   }
 });
 
-// app.use('/uploads', express.static(path.join(__dirname, '../uploads.js')));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));

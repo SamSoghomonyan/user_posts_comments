@@ -1,7 +1,7 @@
 import { ExpressMiddlewareInterface, Middleware } from 'routing-controllers';
 import * as jwt from 'jsonwebtoken';
-import { AppDataSource } from '../src/data-source.js';
-import { User } from '../src/entity/User.js';
+import { AppDataSource } from '../src/data-source';
+import { User } from '../src/entity/User';
 
 @Middleware({ type: 'before' })
 export class CurrentUser implements ExpressMiddlewareInterface {

@@ -12,9 +12,9 @@ import {
   HttpError,
   HttpCode
 } from "routing-controllers";
-import { AppDataSource } from "../src/data-source.js";
-import { User } from "../src/entity/User.js";
-import { FriendRequest } from "../src/entity/FriendRequest.js";
+import { AppDataSource } from "../src/data-source";
+import { User } from "../src/entity/User";
+import { FriendRequest } from "../src/entity/FriendRequest";
 
 @JsonController('/friend-requests')
 export class FriendRequestController {
