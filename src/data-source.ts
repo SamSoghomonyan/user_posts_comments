@@ -1,9 +1,10 @@
 import "reflect-metadata";
 import { DataSource } from "typeorm";
-import {User} from "./entity/User.js";
-import {UserPosts} from "./entity/Post.js";
-import {CommentPost} from "./entity/Comment.js";
-import { FriendRequest } from "./entity/FriendRequest.js";
+import {User} from "./entity/User";
+import {UserPosts} from "./entity/Post";
+import {CommentPost} from "./entity/Comment";
+import {PostLike} from "./entity/PostLike";
+import { FriendRequest } from "./entity/FriendRequest";
 
 export const AppDataSource = new DataSource({
     type: "postgres",
@@ -14,7 +15,7 @@ export const AppDataSource = new DataSource({
     database: "todo",
     synchronize: true,
     logging: false,
-    entities: [User,UserPosts,CommentPost,FriendRequest],
+    entities: [User,UserPosts,CommentPost,PostLike,FriendRequest],
     migrations: [],
     subscribers: [],
 });
