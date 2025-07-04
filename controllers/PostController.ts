@@ -14,13 +14,14 @@ import {
   HttpError,
   HttpCode
 } from "routing-controllers";
-import { AppDataSource } from "../src/data-source";
-import { User } from "../src/entity/User";
-import { UserPosts } from "../src/entity/Post";
-import { fileUploadOptions } from "../utils/fileUploadOptions";
+import { AppDataSource } from "../src/data-source.js";
+import { User } from "../src/entity/User.js";
+import { UserPosts } from "../src/entity/Post.js";
+import { fileUploadOptions } from "../utils/fileUploadOptions.js";
 
 @JsonController('/posts')
 export class PostController {
+
   private postRepo = AppDataSource.getRepository(UserPosts);
 
   @Get('/')

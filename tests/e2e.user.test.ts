@@ -1,8 +1,8 @@
 import request from 'supertest';
 import { app } from '../src/app';
-import { AppDataSource } from '../src/data-source';
+import { AppDataSource } from '../src/data-source.js';
 import jwt from 'jsonwebtoken';
-import {User} from "../src/entity/User";
+import {User} from "../src/entity/User.js";
 
 describe('Users API with auth', () => {
   let token = '';

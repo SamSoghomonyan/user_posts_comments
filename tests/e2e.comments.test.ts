@@ -1,7 +1,7 @@
 import request from 'supertest';
 import { app } from '../src/app';
-import { AppDataSource } from '../src/data-source';
-import { CommentPost } from "../src/entity/Comment";
+import { AppDataSource } from '../src/data-source.js';
+import { CommentPost } from "../src/entity/Comment.js";
 
 describe('CommentController', () => {
   let token: string;
@@ -15,6 +15,7 @@ describe('CommentController', () => {
     email: `${random1}@example.com`,
     password: '123456',
   };
+
 
   const random2 = Math.random().toString(36).substring(2, 10);
   const user2 = {

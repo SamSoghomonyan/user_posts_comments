@@ -6,8 +6,8 @@ import {
   BadRequestError,
   HttpCode
 } from 'routing-controllers';
-import { AppDataSource } from "../src/data-source";
-import { User } from "../src/entity/User";
+import { AppDataSource } from "../src/data-source.js";
+import { User } from "../src/entity/User.js";
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 
